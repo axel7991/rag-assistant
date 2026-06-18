@@ -5,6 +5,11 @@ import os
 from pypdf import PdfReader
 import chromadb
 from sentence_transformers import SentenceTransformer
+import anthropic
+from dotenv import load_dotenv
+from pydantic import BaseModel
+
+load_dotenv()
 
 def extract_text_from_pdf(file_path):
     reader = PdfReader(file_path)
@@ -36,6 +41,11 @@ app.add_middleware(
 
 os.makedirs("uploads", exist_ok=True)
 
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+class Question(BaseModel):
+    question: str
+
 @app.get("/")
 def home():
     return {"message": "RAG Assistant API is running"}
@@ -62,4 +72,39 @@ async def upload_file(file: UploadFile = File(...)):
         "message": "File uploaded and indexed successfully",
         "filename": file.filename,
         "total_chunks": len(chunks)
+    }
+
+@app.post("/ask")
+async def ask_question(question: Question):
+    question_embedding = embedding_model.encode(question.question).tolist()
+    
+    results = collection.query(
+        query_embeddings=[question_embedding],
+        n_results=3
+    )
+    
+    relevant_chunks = results["documents"][0]
+    context = "\n\n".join(relevant_chunks)
+    
+    message = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=500,
+        messages=[{
+            "role": "user",
+            "content": f"""Answer the question based ONLY on the context below. If the answer isn't in the context, say so.
+
+CONTEXT:
+{context}
+
+QUESTION:
+{question.question}
+
+ANSWER:"""
+        }]
+    )
+    
+    return {
+        "question": question.question,
+        "answer": message.content[0].text,
+        "sources_used": len(relevant_chunks)
     }

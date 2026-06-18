@@ -84,6 +84,7 @@ async def ask_question(question: Question):
     )
     
     relevant_chunks = results["documents"][0]
+    metadatas = results["metadatas"][0]
     context = "\n\n".join(relevant_chunks)
     
     message = client.messages.create(
@@ -103,8 +104,16 @@ ANSWER:"""
         }]
     )
     
+    sources = []
+    for i, chunk in enumerate(relevant_chunks):
+        sources.append({
+            "filename": metadatas[i]["filename"],
+            "chunk_index": metadatas[i]["chunk_index"],
+            "preview": chunk[:150] + "..."
+        })
+
     return {
         "question": question.question,
         "answer": message.content[0].text,
-        "sources_used": len(relevant_chunks)
+        "sources": sources
     }

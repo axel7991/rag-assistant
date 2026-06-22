@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocQuery — Ask Your Documents Anything</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0e1621;
+    --navy-mid: #16202e;
+    --navy-light: #1e2d40;
+    --slate: #2a3f58;
+    --amber: #e8a838;
+    --amber-light: #fdf3dc;
+    --amber-dark: #7a5210;
+    --white: #ffffff;
+    --gray-100: #f0f2f5;
+    --gray-400: #8a96a3;
+    --gray-600: #5a6472;
+    --font: 'Inter', sans-serif;
+    --display: 'Playfair Display', serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    background: var(--white);
+    color: var(--navy);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(14, 22, 33, 0.96);
+    backdrop-filter: blur(12px);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--white);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-logo .amber-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--amber);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 14px;
+    color: var(--gray-400);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--white); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    border: none;
+  }
+
+  .btn-amber {
+    background: var(--amber);
+    color: var(--navy);
+  }
+
+  .btn-amber:hover { background: #d4952e; transform: translateY(-1px); }
+
+  .btn-outline-light {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .btn-outline-light:hover { border-color: rgba(255,255,255,0.5); }
+
+  .btn-outline-dark {
+    background: transparent;
+    color: var(--navy);
+    border: 1px solid var(--gray-100);
+  }
+
+  .btn-outline-dark:hover { border-color: var(--gray-400); }
+
+  .btn-lg { padding: 14px 28px; font-size: 15px; border-radius: 8px; }
+
+  /* HERO */
+  .hero {
+    background: var(--navy);
+    padding: 100px 2rem 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(232,168,56,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(232,168,56,0.12);
+    border: 1px solid rgba(232,168,56,0.25);
+    color: var(--amber);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 32px;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+  }
+
+  .hero h1 {
+    font-family: var(--display);
+    font-size: clamp(38px, 6vw, 68px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    margin-bottom: 24px;
+    max-width: 780px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--gray-400);
+    max-width: 520px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 56px;
+  }
+
+  .hero-proof {
+    font-size: 13px;
+    color: var(--gray-400);
+    font-family: var(--mono);
+  }
+
+  /* DEMO CARD */
+  .demo-card {
+    max-width: 680px;
+    margin: 0 auto 80px;
+    background: var(--navy-mid);
+    border: 1px solid var(--slate);
+    border-radius: 14px;
+    overflow: hidden;
+    text-align: left;
+  }
+
+  .demo-card-header {
+    background: var(--navy-light);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--slate);
+  }
+
+  .demo-file-tag {
+    background: rgba(232,168,56,0.15);
+    color: var(--amber);
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .demo-file-name {
+    font-size: 13px;
+    color: var(--gray-400);
+    font-family: var(--mono);
+  }
+
+  .demo-body {
+    padding: 24px;
+  }
+
+  .demo-question {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+  }
+
+  .demo-q-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--gray-400);
+    background: var(--navy-light);
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .demo-q-text {
+    font-size: 14px;
+    color: var(--white);
+    line-height: 1.5;
+  }
+
+  .demo-answer {
+    background: var(--navy-light);
+    border-left: 3px solid var(--amber);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+
+  .demo-answer-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--amber);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .demo-answer-text {
+    font-size: 13px;
+    color: #c8d4e0;
+    line-height: 1.7;
+  }
+
+  .demo-sources {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .demo-source-tag {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--gray-400);
+    background: var(--navy-light);
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--slate);
+  }
+
+  /* SECTIONS */
+  .section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 2rem;
+  }
+
+  .section-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(26px, 4vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    color: var(--navy);
+  }
+
+  .section-sub {
+    font-size: 17px;
+    color: var(--gray-600);
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  /* USE CASES */
+  .usecases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 56px;
+  }
+
+  .usecase-card {
+    border: 1px solid var(--gray-100);
+    border-radius: 12px;
+    padding: 28px;
+    background: var(--white);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .usecase-card:hover {
+    border-color: var(--amber);
+    box-shadow: 0 4px 24px rgba(232,168,56,0.08);
+  }
+
+  .usecase-icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .usecase-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+
+  .usecase-desc {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.6;
+  }
+
+  /* HOW IT WORKS */
+  .how-section {
+    background: var(--navy);
+  }
+
+  .how-section .section-title { color: var(--white); }
+  .how-section .section-sub { color: var(--gray-400); }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 40px;
+    margin-top: 56px;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+  }
+
+  .step-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  .step-desc {
+    font-size: 14px;
+    color: var(--gray-400);
+    line-height: 1.6;
+  }
+
+  /* PRICING */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-top: 56px;
+  }
+
+  .pricing-card {
+    border: 1px solid var(--gray-100);
+    border-radius: 14px;
+    padding: 32px;
+    position: relative;
+    background: var(--white);
+    transition: border-color 0.2s;
+  }
+
+  .pricing-card:hover { border-color: var(--gray-400); }
+
+  .pricing-card.featured {
+    border-color: var(--amber);
+    border-width: 2px;
+  }
+
+  .featured-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--amber);
+    color: var(--navy);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  .plan-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .plan-price {
+    font-size: 44px;
+    font-weight: 700;
+    font-family: var(--display);
+    color: var(--navy);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .plan-price span {
+    font-size: 16px;
+    font-weight: 400;
+    font-family: var(--font);
+    color: var(--gray-400);
+  }
+
+  .plan-desc {
+    font-size: 13px;
+    color: var(--gray-600);
+    margin-bottom: 24px;
+    margin-top: 8px;
+  }
+
+  .plan-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .plan-features li {
+    font-size: 14px;
+    color: var(--gray-600);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .plan-features li::before {
+    content: '✓';
+    color: var(--amber);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* FAQ */
+  .faq-list {
+    margin-top: 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--gray-100);
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 700px;
+  }
+
+  .faq-item {
+    background: var(--white);
+    padding: 24px 28px;
+  }
+
+  .faq-q {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+
+  .faq-a {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.7;
+  }
+
+  /* CTA */
+  .cta-section {
+    background: var(--amber);
+    padding: 100px 2rem;
+    text-align: center;
+  }
+
+  .cta-section h2 {
+    font-family: var(--display);
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    line-height: 1.2;
+  }
+
+  .cta-section p {
+    font-size: 17px;
+    color: rgba(14,22,33,0.65);
+    margin-bottom: 40px;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--navy);
+    padding: 40px 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  footer p {
+    font-size: 13px;
+    color: var(--gray-400);
+    font-family: var(--mono);
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 0 1rem; }
+    .nav-links { display: none; }
+    .section { padding: 60px 1rem; }
+    .hero { padding: 60px 1rem 40px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="amber-dot"></span>
+    DocQuery
+  </a>
+  <ul class="nav-links">
+    <li><a href="#usecases">Use Cases</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <a href="#pricing" class="btn btn-amber">Start free →</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">
+    ✦ RAG-powered document intelligence
+  </div>
+
+  <h1>Your documents,<br><em>finally answerable</em></h1>
+
+  <p class="hero-sub">
+    Upload any PDF. Ask questions in plain English. Get precise, cited answers — no hallucinations, no guessing.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#pricing" class="btn btn-amber btn-lg">Start for free →</a>
+    <a href="#how" class="btn btn-outline-light btn-lg">See how it works</a>
+  </div>
+
+  <p class="hero-proof">No credit card required · Works with any PDF · Answers include sources</p>
+</section>
+
+<div class="demo-card">
+  <div class="demo-card-header">
+    <span class="demo-file-tag">PDF</span>
+    <span class="demo-file-name">Q3-financial-report.pdf · 47 pages</span>
+  </div>
+  <div class="demo-body">
+    <div class="demo-question">
+      <span class="demo-q-label">Q</span>
+      <span class="demo-q-text">What was the net revenue for Q3 and how does it compare to Q2?</span>
+    </div>
+    <div class="demo-answer">
+      <div class="demo-answer-label">DocQuery Answer</div>
+      <div class="demo-answer-text">Net revenue for Q3 was $4.2M, representing a 12% increase from Q2's $3.75M. The growth was primarily driven by expansion in the enterprise segment, which grew 18% quarter-over-quarter.</div>
+    </div>
+    <div class="demo-sources">
+      <span class="demo-source-tag">📄 Page 8 — Executive Summary</span>
+      <span class="demo-source-tag">📄 Page 23 — Revenue Breakdown</span>
+      <span class="demo-source-tag">📄 Page 31 — Segment Analysis</span>
+    </div>
+  </div>
+</div>
+
+<section class="section" id="usecases">
+  <div class="section-eyebrow">Use Cases</div>
+  <h2 class="section-title">Built for anyone who reads documents</h2>
+  <p class="section-sub">If you've ever spent 20 minutes searching a PDF for one number, DocQuery is for you.</p>
+
+  <div class="usecases-grid">
+    <div class="usecase-card">
+      <span class="usecase-icon">⚖️</span>
+      <div class="usecase-title">Legal professionals</div>
+      <div class="usecase-desc">Review contracts, extract clauses, and surface key terms from hundreds of pages in seconds — with exact citations.</div>
+    </div>
+    <div class="usecase-card">
+      <span class="usecase-icon">📊</span>
+      <div class="usecase-title">Finance & accounting</div>
+      <div class="usecase-desc">Query financial reports, audit documents, and regulatory filings without reading every line manually.</div>
+    </div>
+    <div class="usecase-card">
+      <span class="usecase-icon">🎓</span>
+      <div class="usecase-title">Researchers & students</div>
+      <div class="usecase-desc">Ask your thesis, papers, or textbooks direct questions and get answers grounded in the actual source.</div>
+    </div>
+    <div class="usecase-card">
+      <span class="usecase-icon">🏢</span>
+      <div class="usecase-title">HR & compliance teams</div>
+      <div class="usecase-desc">Search policy documents, employee handbooks, and compliance guidelines instantly without Ctrl+F.</div>
+    </div>
+    <div class="usecase-card">
+      <span class="usecase-icon">🏥</span>
+      <div class="usecase-title">Healthcare professionals</div>
+      <div class="usecase-desc">Extract relevant information from clinical documents, research papers, and patient guidelines.</div>
+    </div>
+    <div class="usecase-card">
+      <span class="usecase-icon">🏗️</span>
+      <div class="usecase-title">Engineers & architects</div>
+      <div class="usecase-desc">Query technical manuals, specifications, and building codes to find the exact requirement you need.</div>
+    </div>
+  </div>
+</section>
+
+<section class="how-section">
+  <div class="section" id="how">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-title">From PDF to answer in seconds</h2>
+    <p class="section-sub">No training. No setup. Just upload and ask.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">STEP 01</div>
+        <div class="step-title">Upload your PDF</div>
+        <div class="step-desc">Drop any PDF — contracts, reports, research papers, manuals. DocQuery reads and indexes it instantly.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">STEP 02</div>
+        <div class="step-title">Ask in plain English</div>
+        <div class="step-desc">Type your question naturally. "What are the termination clauses?" or "What was last quarter's EBITDA?"</div>
+      </div>
+      <div class="step">
+        <div class="step-num">STEP 03</div>
+        <div class="step-title">Get a cited answer</div>
+        <div class="step-desc">DocQuery surfaces the most relevant passages and generates a precise answer — with exact source citations so you can verify every claim.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">STEP 04</div>
+        <div class="step-title">Keep asking</div>
+        <div class="step-desc">Your document stays indexed. Ask follow-up questions, explore different angles, dig deeper — all instantly.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="pricing">
+  <div class="section-eyebrow">Pricing</div>
+  <h2 class="section-title">Simple pricing, serious capability</h2>
+  <p class="section-sub">Start free. Upgrade when your documents grow.</p>
+
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0<span>/month</span></div>
+      <div class="plan-desc">Try it with your first document</div>
+      <ul class="plan-features">
+        <li>3 documents</li>
+        <li>50 questions/month</li>
+        <li>PDFs up to 20MB</li>
+        <li>Source citations</li>
+      </ul>
+      <a href="#" class="btn btn-outline-dark" style="width:100%; justify-content:center;">Get started free</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$19<span>/month</span></div>
+      <div class="plan-desc">For individuals and freelancers</div>
+      <ul class="plan-features">
+        <li>20 documents</li>
+        <li>500 questions/month</li>
+        <li>PDFs up to 50MB</li>
+        <li>Source citations</li>
+        <li>Priority processing</li>
+      </ul>
+      <a href="https://buy.stripe.com/test_5kQcN6duh9e53C03VRejK05" class="btn btn-outline-dark" style="width:100%; justify-content:center;">Start free trial</a>
+    </div>
+
+    <div class="pricing-card featured">
+      <div class="featured-badge">Most popular</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$49<span>/month</span></div>
+      <div class="plan-desc">For professionals and small teams</div>
+      <ul class="plan-features">
+        <li>Unlimited documents</li>
+        <li>Unlimited questions</li>
+        <li>PDFs up to 200MB</li>
+        <li>Source citations</li>
+        <li>Priority processing</li>
+        <li>API access</li>
+      </ul>
+      <a href="https://buy.stripe.com/test_8x228s75T61TfkIfEzejK04" class="btn btn-amber" style="width:100%; justify-content:center;">Start 14-day trial</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="plan-name">Teams</div>
+      <div class="plan-price">$99<span>/month</span></div>
+      <div class="plan-desc">For teams and organizations</div>
+      <ul class="plan-features">
+        <li>Everything in Pro</li>
+        <li>Up to 10 team members</li>
+        <li>Shared document library</li>
+        <li>Admin dashboard</li>
+        <li>Priority support</li>
+        <li>Custom integrations</li>
+      </ul>
+      <a href="https://buy.stripe.com/test_eVqcN6cqd9e58WkbojejK03" class="btn btn-outline-dark" style="width:100%; justify-content:center;">Contact us</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="section-eyebrow">FAQ</div>
+  <h2 class="section-title">Common questions</h2>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q">What types of documents can I upload?</div>
+      <div class="faq-a">Any PDF — contracts, financial reports, research papers, technical manuals, textbooks, and more. If it's a PDF, DocQuery can read it.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How accurate are the answers?</div>
+      <div class="faq-a">DocQuery only answers from what's actually in your document — it never invents information. Every answer includes source citations so you can verify the exact passage it came from.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Is my data private and secure?</div>
+      <div class="faq-a">Your documents are stored securely and never used to train AI models. Only you have access to your uploaded files.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How is this different from Ctrl+F?</div>
+      <div class="faq-a">Ctrl+F finds exact words. DocQuery understands meaning — so asking "what are the payment terms?" will find the relevant clause even if those exact words don't appear together in the document.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can I cancel anytime?</div>
+      <div class="faq-a">Yes — no contracts, no commitments. Cancel anytime and you won't be charged again.</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Stop searching.<br>Start asking.</h2>
+  <p>Join professionals who get answers from their documents in seconds.</p>
+  <a href="#pricing" class="btn btn-outline-dark btn-lg">Get started free →</a>
+  <p style="margin-top: 20px; font-size: 13px; color: rgba(14,22,33,0.5); font-family: var(--mono);">
+    Free plan · No credit card · Cancel anytime
+  </p>
+</section>
+
+<footer>
+  <p>© 2026 DocQuery · built by axel</p>
+  <p>axeltk300@gmail.com</p>
+</footer>
+
+</body>
+</html>

@@ -19,7 +19,7 @@ def extract_text_from_pdf(file_path):
     return text
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-chroma_client = chromadb.Client()
+chroma_client = chromadb.PersistentClient(path="./chroma_data")
 collection = chroma_client.get_or_create_collection(name="documents")
 
 def chunk_text(text, chunk_size=500):

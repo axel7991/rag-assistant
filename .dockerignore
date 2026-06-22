@@ -4,4 +4,5 @@ __pycache__/
 .env
 uploads/
 chroma/
+chroma_data/
 .git/

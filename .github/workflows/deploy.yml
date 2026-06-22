@@ -21,4 +21,4 @@ jobs:
             docker build -t rag-assistant .
             docker stop rag-assistant || true
             docker rm rag-assistant || true
-            docker run -d --env-file .env -p 8000:8000 --name rag-assistant rag-assistant
+            docker run -d --env-file .env -p 8000:8000 -v /home/ec2-user/rag-assistant/chroma_data:/app/chroma_data --name rag-assistant rag-assistant

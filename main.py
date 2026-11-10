@@ -8,6 +8,7 @@ from sentence_transformers import SentenceTransformer
 import anthropic
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from chunking import chunk_text
 
 load_dotenv()
 
@@ -22,13 +23,6 @@ embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 chroma_client = chromadb.PersistentClient(path="./chroma_data")
 collection = chroma_client.get_or_create_collection(name="documents")
 
-def chunk_text(text, chunk_size=500):
-    words = text.split()
-    chunks = []
-    for i in range(0, len(words), chunk_size):
-        chunk = " ".join(words[i:i + chunk_size])
-        chunks.append(chunk)
-    return chunks
 
 app = FastAPI(title="RAG Document Assistant")
 

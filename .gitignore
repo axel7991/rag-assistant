@@ -7,3 +7,8 @@ uploads/
 chroma/
 chroma_data/
 .pytest_cache/
+
+# SQLite databases
+*.db
+*.db-wal
+*.db-shm
